@@ -1,209 +1,176 @@
-CoffeeShop Django
-Описание
-CoffeeShop — это тестовое приложение (REST API) для управления пользователями, товарами (продуктами), корзиной и заказами в сети кофеен. Пользователи могут просматривать каталог товаров, добавлять их в корзину и оформлять заказы, а администратор управляет всеми сущностями и получает уведомления.
+# CoffeeShop Django
 
-Технологический стек:
+**Тестовое приложение** на Django для управления пользователями, товарами (продуктами), корзиной и заказами в сети кофеен. Пользователи могут просматривать каталог товаров, добавлять их в корзину и оформлять заказы, а администратор управляет категориями, товарами и пользователями. Также реализован чат поддержки (WebSocket), JWT-аутентификация, Swagger-документация, и (опционально) уведомления на почту.
 
-Django 5.1 + Django REST Framework
-PostgreSQL (реляционная база данных)
-JWT (через djangorestframework-simplejwt)
-Django Channels (для WebSocket-чата поддержки)
-drf-yasg (Swagger / ReDoc документация)
-Функциональность
-Управление пользователями:
+---
 
-Регистрация нового пользователя.
-Авторизация и получение/обновление токенов (JWT).
-Роли: user, admin.
-Очистка не верифицированных пользователей (через management command или Celery — по желанию).
-Каталог:
+## Функциональность
 
-Категории (Category): создание, просмотр, редактирование, удаление (доступно админам).
-Товары (Product): CRUD-операции, сортировка, фильтр, поиск.
-Корзина (Cart):
+- **Пользователи (CustomUser)**:
+  - Регистрация / аутентификация (JWT).
+  - Поле `role` (значения: `user` или `admin`).
+  - Поле `is_verified` (для подтверждённых / неподтверждённых аккаунтов).
+  - Очистка не верифицированных пользователей через 2 дня (опционально).
 
-Добавление товара в корзину (POST).
-Просмотр корзины (GET).
-Удаление одного товара или очистка всей корзины (DELETE).
-Заказы (Orders):
+- **Категории / Товары**:
+  - Категории (`Category`) и Товары (`Product`).
+  - CRUD-операции. Для админов — создание/редактирование, для пользователей — только чтение.
+  - Поиск, фильтрация, сортировка, пагинация (через Django REST Framework).
 
-Создание заказа, просмотр списка (для админа — всех, для пользователя — только своих).
-Уведомление по email (опционально).
-WebSocket-чат (Support Chat):
+- **Корзина (Cart)**:
+  - Модель `CartItem` хранит `(user_id, product_id, quantity)`.
+  - CRUD эндпоинты для добавления товаров в корзину, просмотра содержимого и удаления позиций.
 
-Django Channels для реализации онлайн-чата поддержки.
-Документация:
+- **Заказы (Order)**:
+  - Модель `Order` (поля: `user_id`, `created_at`, `total_price`, `status`).
+  - Модель `OrderItem` (ссылки на `order_id` и `product_id`, хранит `quantity`, `price`).
+  - Создание заказа из корзины, просмотр. Админ видит все заказы, пользователь видит только свои.
 
-Swagger: /swagger/
-ReDoc: /redoc/
-Безопасность:
+- **WebSocket-чат (Support Chat)**:
+  - Django Channels, маршрут `ws://127.0.0.1:8000/ws/support/`.
+  - Позволяет пользователю общаться с поддержкой в реальном времени.
 
-JWT (Bearer Token) — аутентификация.
-Django ORM (защита от SQL injection).
-Встроенный CSRF (для админки и Cookie-based запросов).
-Запуск и установка
-1. Клонирование проекта
-bash
-Copy
-Edit
-git clone https://github.com/Aziz-37/CoffeeShopDjango.git
-cd CoffeeShopDjango
-2. Виртуальное окружение (рекомендуется)
-bash
-Copy
-Edit
-python -m venv .venv
-source .venv/bin/activate  # Mac/Linux
-# или
-.\.venv\Scripts\activate   # Windows
-3. Установка зависимостей
-bash
-Copy
-Edit
-pip install -r requirements.txt
-Убедитесь, что у вас установлен драйвер для PostgreSQL (например, psycopg2-binary).
+- **Swagger / ReDoc** (drf-yasg):
+  - Swagger: `http://127.0.0.1:8000/swagger/`
+  - ReDoc: `http://127.0.0.1:8000/redoc/`
 
-4. Настройка базы данных
-В файле CoffeeShop/settings.py в блоке DATABASES пропишите доступ к вашей PostgreSQL-базе:
+---
 
-python
-Copy
-Edit
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'coffee_db',
-        'USER': 'postgres',
-        'PASSWORD': 'aziz123',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
-}
-Создайте базу coffee_db (через pgAdmin или psql):
+## Технологии
 
-sql
-Copy
-Edit
-CREATE DATABASE coffee_db;
-5. Применить миграции
-bash
-Copy
-Edit
-python manage.py migrate
-6. Создать суперпользователя (админ)
-bash
-Copy
-Edit
-python manage.py createsuperuser
-7. Запуск сервера
-bash
-Copy
-Edit
-python manage.py runserver
-Откройте в браузере http://127.0.0.1:8000/admin/ чтобы зайти в админку Django.
+```text
+- Python 3.11
+- Django 5.1
+- Django REST Framework
+- PostgreSQL (через psycopg2-binary)
+- djangorestframework-simplejwt (JWT)
+- Django Channels (websocket)
+- drf-yasg (Swagger / ReDoc)
 
-8. (Опционально) Запуск с WebSockets (Channels)
-Если вы хотите использовать WebSocket-чат:
+1. Клонировать репозиторий:
+   git clone https://github.com/Aziz-37/CoffeeShopDjango.git
+   cd CoffeeShopDjango
 
-bash
-Copy
-Edit
-# Установите daphne (или uvicorn):
-pip install daphne
+2. Создать виртуальное окружение (рекомендуется):
+   python -m venv .venv
+   # Активировать:
+   # Windows:
+   .\.venv\Scripts\activate
+   # Mac/Linux:
+   source .venv/bin/activate
 
-# Запуск:
-daphne CoffeeShop.asgi:application
+3. Установить зависимости:
+   pip install -r requirements.txt
 
-# Теперь сервер слушает на 127.0.0.1:8000 и WebSocket-доступен на ws://127.0.0.1:8000/ws/support/
-Маршруты (Основные эндпоинты)
-Admin: http://127.0.0.1:8000/admin/ (Django админка)
-Swagger: http://127.0.0.1:8000/swagger/
-ReDoc: http://127.0.0.1:8000/redoc/
-Auth (JWT)
-POST /api/token/ — получить access и refresh токены.
-json
-Copy
-Edit
-{
-  "username": "admin",
-  "password": "admin123"
-}
-POST /api/token/refresh/ — обновить access, передав refresh.
-Products & Categories
-GET /api/products/ — список продуктов (фильтры, поиск, сортировка при желании).
-POST /api/products/ — создать продукт (admin).
-GET /api/categories/ — список категорий.
-POST /api/categories/ — создать категорию (admin).
-и т.д. (обычный ModelViewSet CRUD).
-Cart
-GET /api/cart/ — получить товары в корзине текущего пользователя.
-POST /api/cart/ — добавить товар в корзину.
-DELETE /api/cart/{id}/ — удалить позицию из корзины.
-DELETE /api/cart/ — очистить корзину.
-Orders
-GET /api/orders/ — список заказов.
-Админ видит все, пользователь — только свои.
-POST /api/orders/ — создать заказ из своей корзины.
-GET /api/orders/{id}/ — детали заказа.
-PATCH/PUT/DELETE /api/orders/{id}/ — обновлять/удалять заказ (в зависимости от логики).
-WebSocket Chat
-ws://127.0.0.1:8000/ws/support/ — WebSocket-чат с поддержкой.
-ER Диаграмма
-Ниже условный пример (вставьте свою схему).
+4. Настроить базу (PostgreSQL):
+   - Открыть CoffeeShop/settings.py
+   - В секции DATABASES указать название БД, пользователя, пароль.
+   Например:
+       DATABASES = {
+           'default': {
+               'ENGINE': 'django.db.backends.postgresql',
+               'NAME': 'coffee_db',
+               'USER': 'postgres',
+               'PASSWORD': 'aziz123',
+               'HOST': 'localhost',
+               'PORT': '5432',
+           }
+       }
+   - Создать базу coffee_db в PostgreSQL (через pgAdmin или psql).
 
-users_customuser: хранит пользователей, поля (id, username, email, role, is_verified...).
-products_category, products_product: категории и товары (FK category -> product).
-cart_cartitem: связь пользователь → товар (многие ко многим, через отдельную модель).
-orders_order, orders_orderitem: заказ и позиции заказа.
-Очистка не верифицированных пользователей
-(Опционально) в users/management/commands/cleanup_unverified.py:
+5. Применить миграции:
+   python manage.py migrate
 
-python
-Copy
-Edit
-import datetime
-from django.core.management.base import BaseCommand
-from django.utils import timezone
-from users.models import CustomUser
+6. Создать суперпользователя:
+   python manage.py createsuperuser
 
-class Command(BaseCommand):
-    help = 'Удаляет не верифицированных пользователей старше 2 дней'
+7. Запустить сервер:
+   python manage.py runserver
+   # или (если нужен чат через Channels):
+   # pip install daphne
+   # daphne CoffeeShop.asgi:application
 
-    def handle(self, *args, **options):
-        cutoff = timezone.now() - datetime.timedelta(days=2)
-        qs = CustomUser.objects.filter(is_verified=False, date_joined__lt=cutoff)
-        count, _ = qs.delete()
-        self.stdout.write(self.style.SUCCESS(f"Deleted {count} unverified users"))
-Запуск:
+8. Открыть в браузере:
+   http://127.0.0.1:8000/admin/  (админка)
+   http://127.0.0.1:8000/swagger/
+   http://127.0.0.1:8000/redoc/
 
-bash
-Copy
-Edit
-python manage.py cleanup_unverified
-Тесты
-(Опционально) для каждого приложения можно сделать tests.py, например:
+ER Диаграмма (структура БД)
+ ┌─────────────────────────┐      ┌─────────────────────────┐
+ │       Category          │      │        Product          │
+ │─────────────────────────│      │─────────────────────────│
+ │ id (PK)                │1    *│ id (PK)                 │
+ │ name                   ├──────┤ name                     │
+ │ description            │      │ description              │
+ └─────────────────────────┘      │ price                   │
+                                  │ category_id (FK→Category)
+                                  └─────────────────────────┘
 
-python
-Copy
-Edit
-from django.test import TestCase
-from django.contrib.auth import get_user_model
-from rest_framework.test import APIClient
+ ┌─────────────────────────┐      ┌─────────────────────────┐
+ │       CustomUser        │      │        CartItem         │
+ │─────────────────────────│      │─────────────────────────│
+ │ id (PK)                 │      │ id (PK)                 │
+ │ username                │      │ user_id (FK→CustomUser) │
+ │ email                   │1    *│ product_id (FK→Product) │
+ │ password                ├──────┤ quantity                │
+ │ role (user/admin)       │      └─────────────────────────┘
+ │ is_verified (bool)      │
+ └─────────────────────────┘
 
-class ProductAPITest(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.user = get_user_model().objects.create_user(username='test', password='test123')
+ ┌─────────────────────────┐      ┌─────────────────────────┐
+ │         Order           │      │      OrderItem          │
+ │─────────────────────────│      │─────────────────────────│
+ │ id (PK)                 │      │ id (PK)                 │
+ │ user_id (FK→CustomUser) │1    *│ order_id (FK→Order)     │
+ │ created_at              ├──────┤ product_id (FK→Product) │
+ │ total_price             │      │ quantity                │
+ │ status                  │      │ price                   │
+ └─────────────────────────┘      └─────────────────────────┘
+Краткое описание
+CustomUser: расширенная модель пользователя (роль, верификация).
+Category ↔ Product: связь 1 ко многим (одна категория, много товаров).
+CartItem: связь user ↔ product, хранит quantity.
+Order: ссылка на user, хранит дату, сумму, статус.
+OrderItem: внутри заказа, указывает какой товар и сколько штук.
 
-    def test_get_products_list(self):
-        response = self.client.get('/api/products/')
-        self.assertEqual(response.status_code, 200)
-        # ...
-Дополнительно
-Авторизация по JWT: при запросах к защищённым эндпоинтам (POST /api/products/ и т.п.) нужно передавать заголовок:
-makefile
-Copy
-Edit
+JWT Аутентификация
+POST /api/token/
+  {
+    "username": "...",
+    "password": "..."
+  }
+# Ответ содержит "access" и "refresh" поля.
+
+POST /api/token/refresh/
+  {
+    "refresh": "<refresh_token>"
+  }
+# Выдаёт новый "access".
 Authorization: Bearer <access_token>
-Фильтры и поиск: Для примера /api/products/?search=latte&ordering=-price
-Роль: можно хранить в поле CustomUser.role (user, admin), и проверять в вьюхах или через кастомные permissions.
+
+Пример эндпоинтов
+
+1. /api/products/         # GET: список продуктов, POST: добавить продукт (admin)
+2. /api/products/{id}/    # GET, PUT, PATCH, DELETE
+3. /api/categories/       # CRUD аналогично
+4. /api/cart/             # GET: корзина, POST: добавить товар
+5. /api/cart/{id}/        # DELETE: удалить из корзины
+6. /api/orders/           # GET (admin видит все, user видит свои), POST: создать заказ
+7. /api/orders/{id}/      # GET, PATCH, DELETE
+8. /api/token/            # Получить JWT-токен
+9. /api/token/refresh/    # Обновить токен
+Также можно ознакомиться с полным списком в:
+/swagger/ (Swagger UI) или /redoc/ (ReDoc)
+
+WebSocket-чат поддержки
+Реализован с помощью Django Channels:
+ws://127.0.0.1:8000/ws/support/
+
+Можно протестировать через любой WebSocket клиент.
+
+
+Очистка не верифицированных пользователей
+
+В users/management/commands/delete_unverified_users.py объявлена функция:
+  handle
+которая удаляет пользователей, не подтвердивших регистрацию в течение 2 дней.
