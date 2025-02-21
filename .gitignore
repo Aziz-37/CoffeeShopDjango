@@ -1,0 +1,23 @@
+# Windows
+*.exe
+*.dll
+*.bat
+*.pyc
+*.pyd
+__pycache__/
+
+# Python
+*.py[cod]
+*.egg
+*.egg-info
+dist
+build
+
+# Virtual Env
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
